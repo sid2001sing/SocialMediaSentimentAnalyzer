@@ -5,7 +5,7 @@ A Flask-based dashboard for real-time social media sentiment analysis using Mong
 
 ## Features
 
-- Real-time sentiment analysis using Cardiff NLP Twitter RoBERTa model
+- Real-time sentiment analysis using TextBlob and Hugging Face API
 - MongoDB storage for tweets and sentiment data
 - Interactive dashboard with sentiment distribution charts
 - Brand-specific sentiment tracking
