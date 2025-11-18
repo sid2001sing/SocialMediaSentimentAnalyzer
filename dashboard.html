@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Media Sentiment Analyzer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='advanced.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Social Media Sentiment Analyzer</h1>
+            <p>Real-time sentiment analysis powered by AI</p>
+        </div>
+        
+        <div id="stats-section" class="stats-grid">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card input-section">
+                <h3><i class="fas fa-plus-circle"></i> Add New Content</h3>
+                <div class="form-group">
+                    <label for="tweetText">Social Media Content</label>
+                    <textarea id="tweetText" class="form-control" placeholder="Enter tweet, post, or any social media content..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="brandName">Brand/Topic (Optional)</label>
+                    <input type="text" id="brandName" class="form-control" placeholder="e.g., Apple, Tesla, etc.">
+                </div>
+                <button class="btn" onclick="addTweet()">
+                    <i class="fas fa-brain"></i> Analyze Sentiment
+                </button>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-chart-pie"></i> Sentiment Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card tweets-container">
+                <h3><i class="fas fa-comments"></i> Recent Analysis</h3>
+                <div id="tweets-list" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Features Section -->
+        <div class="card" style="grid-column: span 2; margin-top: 30px;">
+            <h3><i class="fas fa-brain"></i> Advanced Analytics</h3>
+            
+            <div class="feature-tabs">
+                <button class="tab-button active" onclick="showFeature('timeline')">📈 Sentiment Timeline</button>
+                <button class="tab-button" onclick="showFeature('emotions')">😊 Emotion Analysis</button>
+                <button class="tab-button" onclick="showFeature('keywords')">🔤 Keyword Analysis</button>
+                <button class="tab-button" onclick="showFeature('heatmap')">🔥 Activity Heatmap</button>
+                <button class="tab-button" onclick="showFeature('comparison')">⚖️ Brand Comparison</button>
+            </div>
+
+            <!-- Feature 1: Sentiment Timeline -->
+            <div id="timeline-panel" class="feature-panel active">
+                <div class="timeline-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Feature 2: Emotion Analysis -->
+            <div id="emotions-panel" class="feature-panel">
+                <div id="emotion-grid" class="emotion-grid">
+                    <div class="loading">Loading emotion analysis...</div>
+                </div>
+            </div>
+
+            <!-- Feature 3: Keyword Analysis -->
+            <div id="keywords-panel" class="feature-panel">
+                <div class="keyword-section">
+                    <div class="keyword-cloud">
+                        <h4 style="color: #00ff41; margin-bottom: 15px;">🟢 Positive Keywords</h4>
+                        <div id="positive-keywords"></div>
+                    </div>
+                    <div class="keyword-cloud">
+                        <h4 style="color: #ff1744; margin-bottom: 15px;">🔴 Negative Keywords</h4>
+                        <div id="negative-keywords"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 4: Activity Heatmap -->
+            <div id="heatmap-panel" class="feature-panel">
+                <div class="heatmap-container">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Feature 5: Brand Comparison -->
+            <div id="comparison-panel" class="feature-panel">
+                <div class="comparison-container">
+                    <h4 style="color: #64b5f6; margin-bottom: 15px;">Select Brands to Compare:</h4>
+                    <div id="brand-selector" class="brand-selector"></div>
+                    <button class="btn" onclick="runComparison()" style="margin: 10px 0;">
+                        <i class="fas fa-chart-bar"></i> Compare Selected Brands
+                    </button>
+                    <div class="comparison-chart">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sentimentChart;
+        let isAnalyzing = false;
+
+        function addTweet() {
+            const text = document.getElementById('tweetText').value;
+            const brand = document.getElementById('brandName').value;
+            const button = document.querySelector('.btn');
+            
+            if (!text.trim()) {
+                showNotification('Please enter some content to analyze', 'error');
+                return;
+            }
+
+            if (isAnalyzing) return;
+            
+            isAnalyzing = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            button.disabled = true;
+
+            fetch('/add_tweet', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: text, brand: brand})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('tweetText').value = '';
+                document.getElementById('brandName').value = '';
+                showNotification(`Analysis complete! Sentiment: ${data.sentiment_label}`, 'success');
+                loadTweets();
+                updateChart();
+                updateStats();
+            })
+            .catch(error => {
+                showNotification('Error analyzing content. Please try again.', 'error');
+            })
+            .finally(() => {
+                isAnalyzing = false;
+                button.innerHTML = '<i class="fas fa-brain"></i> Analyze Sentiment';
+                button.disabled = false;
+            });
+        }
+
+        function loadTweets() {
+            fetch('/api/tweets')
+            .then(response => response.json())
+            .then(tweets => {
+                const container = document.getElementById('tweets-list');
+                if (tweets.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <p>No content analyzed yet. Add some content above to get started!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = tweets.map(tweet => `
+                    <div class="tweet ${tweet.sentiment_label.toLowerCase()}">
+                        <div class="tweet-header">
+                            <span class="sentiment-badge ${tweet.sentiment_label.toLowerCase()}">
+                                ${tweet.sentiment_label}
+                            </span>
+                            <span class="method-badge">${tweet.analysis_method || 'AI'}</span>
+                        </div>
+                        <div class="tweet-text">${tweet.text}</div>
+                        <div class="tweet-meta">
+                            <span><i class="fas fa-tag"></i> ${tweet.brand}</span>
+                            <span><i class="fas fa-clock"></i> ${new Date(tweet.timestamp).toLocaleString()}</span>
+                            <span><i class="fas fa-percentage"></i> ${(tweet.sentiment_score * 100).toFixed(1)}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(() => {
+                document.getElementById('tweets-list').innerHTML = '<div class="loading">Error loading content</div>';
+            });
+        }
+
+        function updateChart() {
+            fetch('/api/sentiment_stats')
+            .then(response => response.json())
+            .then(stats => {
+                const labels = stats.map(s => s._id);
+                const counts = stats.map(s => s.count);
+                
+                if (sentimentChart) {
+                    sentimentChart.destroy();
+                }
+                
+                const ctx = document.getElementById('sentimentChart').getContext('2d');
+                sentimentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: counts,
+                            backgroundColor: ['#48bb78', '#f56565', '#a0aec0'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function updateStats() {
+            fetch('/api/sentiment_stats')
+            .then(response => response.json())
+            .then(stats => {
+                const statsSection = document.getElementById('stats-section');
+                const total = stats.reduce((sum, stat) => sum + stat.count, 0);
+                
+                statsSection.innerHTML = stats.map(stat => {
+                    const percentage = total > 0 ? ((stat.count / total) * 100).toFixed(1) : 0;
+                    const className = stat._id.toLowerCase();
+                    return `
+                        <div class="stat-card">
+                            <div class="stat-number ${className}">${stat.count}</div>
+                            <div class="stat-label">${stat._id} (${percentage}%)</div>
+                        </div>
+                    `;
+                }).join('') + `
+                    <div class="stat-card">
+                        <div class="stat-number">${total}</div>
+                        <div class="stat-label">Total Analyzed</div>
+                    </div>
+                `;
+            });
+        }
+
+        function showNotification(message, type) {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 1000;
+                padding: 15px 20px; border-radius: 8px; color: white;
+                background: ${type === 'success' ? '#48bb78' : '#f56565'};
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                transform: translateX(400px); transition: transform 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // Load initial data
+        loadTweets();
+        updateChart();
+        updateStats();
+
+        // Advanced Features Functions
+        let timelineChart, heatmapChart, comparisonChart;
+        let selectedBrands = new Set();
+
+        function showFeature(featureName) {
+            // Hide all panels
+            document.querySelectorAll('.feature-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected panel and activate tab
+            document.getElementById(featureName + '-panel').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load feature data
+            switch(featureName) {
+                case 'timeline': loadTimeline(); break;
+                case 'emotions': loadEmotions(); break;
+                case 'keywords': loadKeywords(); break;
+                case 'heatmap': loadHeatmap(); break;
+                case 'comparison': loadBrandSelector(); break;
+            }
+        }
+
+        function loadTimeline() {
+            fetch('/api/sentiment_timeline')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                
+                if (timelineChart) timelineChart.destroy();
+                
+                const dates = [...new Set(data.map(d => d._id.date))].sort();
+                const positiveData = dates.map(date => {
+                    const item = data.find(d => d._id.date === date && d._id.sentiment === 'POSITIVE');
+                    return item ? item.count : 0;
+                });
+                const negativeData = dates.map(date => {
+                    const item = data.find(d => d._id.date === date && d._id.sentiment === 'NEGATIVE');
+                    return item ? item.count : 0;
+                });
+                const neutralData = dates.map(date => {
+                    const item = data.find(d => d._id.date === date && d._id.sentiment === 'NEUTRAL');
+                    return item ? item.count : 0;
+                });
+                
+                timelineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'Positive',
+                                data: positiveData,
+                                borderColor: '#00ff41',
+                                backgroundColor: 'rgba(0, 255, 65, 0.1)',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Negative',
+                                data: negativeData,
+                                borderColor: '#ff1744',
+                                backgroundColor: 'rgba(255, 23, 68, 0.1)',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Neutral',
+                                data: neutralData,
+                                borderColor: '#64b5f6',
+                                backgroundColor: 'rgba(100, 181, 246, 0.1)',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#ffffff' }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#ffffff' }, grid: { color: '#333' } },
+                            y: { ticks: { color: '#ffffff' }, grid: { color: '#333' } }
+                        }
+                    }
+                });
+            });
+        }
+
+        function loadEmotions() {
+            fetch('/api/emotion_analysis')
+            .then(response => response.json())
+            .then(emotions => {
+                const container = document.getElementById('emotion-grid');
+                container.innerHTML = emotions.map(emotion => `
+                    <div class="emotion-card">
+                        <div class="emotion-badge emotion-${emotion.emotion.toLowerCase()}">
+                            ${emotion.emotion}
+                        </div>
+                        <div style="color: #ffffff; font-size: 0.9rem; margin-bottom: 10px;">
+                            ${emotion.text}
+                        </div>
+                        <div style="color: #cccccc; font-size: 0.8rem;">
+                            Polarity: ${emotion.polarity.toFixed(2)} | 
+                            Subjectivity: ${emotion.subjectivity.toFixed(2)}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function loadKeywords() {
+            fetch('/api/keyword_analysis')
+            .then(response => response.json())
+            .then(data => {
+                const posContainer = document.getElementById('positive-keywords');
+                const negContainer = document.getElementById('negative-keywords');
+                
+                posContainer.innerHTML = data.positive_keywords.map(([word, count]) => 
+                    `<span class="keyword-item keyword-positive" style="font-size: ${Math.min(20, 10 + count)}px;">
+                        ${word} (${count})
+                    </span>`
+                ).join('');
+                
+                negContainer.innerHTML = data.negative_keywords.map(([word, count]) => 
+                    `<span class="keyword-item keyword-negative" style="font-size: ${Math.min(20, 10 + count)}px;">
+                        ${word} (${count})
+                    </span>`
+                ).join('');
+            });
+        }
+
+        function loadHeatmap() {
+            fetch('/api/sentiment_heatmap')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('heatmapChart').getContext('2d');
+                
+                if (heatmapChart) heatmapChart.destroy();
+                
+                // Process heatmap data for Chart.js
+                const heatmapData = [];
+                for (let day = 1; day <= 7; day++) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        const item = data.find(d => d._id.day === day && d._id.hour === hour);
+                        heatmapData.push({
+                            x: hour,
+                            y: day,
+                            v: item ? item.count : 0
+                        });
+                    }
+                }
+                
+                heatmapChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Activity',
+                            data: heatmapData,
+                            backgroundColor: function(context) {
+                                const value = context.parsed.v;
+                                const alpha = Math.min(value / 10, 1);
+                                return `rgba(0, 102, 255, ${alpha})`;
+                            },
+                            pointRadius: function(context) {
+                                return Math.max(3, context.parsed.v * 2);
+                            }
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#ffffff' } }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Hour of Day', color: '#ffffff' },
+                                ticks: { color: '#ffffff' },
+                                grid: { color: '#333' }
+                            },
+                            y: {
+                                title: { display: true, text: 'Day of Week', color: '#ffffff' },
+                                ticks: { 
+                                    color: '#ffffff',
+                                    callback: function(value) {
+                                        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                        return days[value - 1];
+                                    }
+                                },
+                                grid: { color: '#333' }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function loadBrandSelector() {
+            fetch('/api/tweets')
+            .then(response => response.json())
+            .then(tweets => {
+                const brands = [...new Set(tweets.map(t => t.brand))];
+                const container = document.getElementById('brand-selector');
+                
+                container.innerHTML = brands.map(brand => 
+                    `<div class="brand-chip" onclick="toggleBrand('${brand}')">
+                        ${brand}
+                    </div>`
+                ).join('');
+            });
+        }
+
+        function toggleBrand(brand) {
+            const chip = event.target;
+            if (selectedBrands.has(brand)) {
+                selectedBrands.delete(brand);
+                chip.classList.remove('selected');
+            } else {
+                selectedBrands.add(brand);
+                chip.classList.add('selected');
+            }
+        }
+
+        function runComparison() {
+            if (selectedBrands.size < 2) {
+                showNotification('Please select at least 2 brands to compare', 'error');
+                return;
+            }
+            
+            fetch('/api/comparative_analysis', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({brands: Array.from(selectedBrands)})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('comparisonChart').getContext('2d');
+                
+                if (comparisonChart) comparisonChart.destroy();
+                
+                const brands = [...selectedBrands];
+                const positiveData = brands.map(brand => {
+                    const item = data.find(d => d._id.brand === brand && d._id.sentiment === 'POSITIVE');
+                    return item ? item.count : 0;
+                });
+                const negativeData = brands.map(brand => {
+                    const item = data.find(d => d._id.brand === brand && d._id.sentiment === 'NEGATIVE');
+                    return item ? item.count : 0;
+                });
+                const neutralData = brands.map(brand => {
+                    const item = data.find(d => d._id.brand === brand && d._id.sentiment === 'NEUTRAL');
+                    return item ? item.count : 0;
+                });
+                
+                comparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: brands,
+                        datasets: [
+                            {
+                                label: 'Positive',
+                                data: positiveData,
+                                backgroundColor: '#00ff41'
+                            },
+                            {
+                                label: 'Negative',
+                                data: negativeData,
+                                backgroundColor: '#ff1744'
+                            },
+                            {
+                                label: 'Neutral',
+                                data: neutralData,
+                                backgroundColor: '#64b5f6'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#ffffff' } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#ffffff' }, grid: { color: '#333' } },
+                            y: { ticks: { color: '#ffffff' }, grid: { color: '#333' } }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (!isAnalyzing) {
+                loadTweets();
+                updateChart();
+                updateStats();
+            }
+        }, 30000);
+
+        // Initialize advanced features
+        setTimeout(() => {
+            loadTimeline();
+        }, 1000);
+    </script>
+</body>
+</html>
