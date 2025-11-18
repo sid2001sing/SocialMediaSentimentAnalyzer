@@ -1,0 +1,212 @@
+.feature-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+}
+
+.tab-button {
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    color: #cccccc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+    color: #0066ff;
+    border-bottom-color: #0066ff;
+}
+
+.tab-button:hover {
+    color: #ffffff;
+    background: rgba(0, 102, 255, 0.1);
+}
+
+.feature-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.feature-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Timeline Chart */
+.timeline-container {
+    height: 300px;
+    margin: 20px 0;
+}
+
+/* Emotion Analysis */
+.emotion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.emotion-card {
+    background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.emotion-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.emotion-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.emotion-joy { background: linear-gradient(135deg, #ffeb3b, #ffc107); color: #000; }
+.emotion-anger { background: linear-gradient(135deg, #f44336, #d32f2f); color: #fff; }
+.emotion-sadness { background: linear-gradient(135deg, #2196f3, #1976d2); color: #fff; }
+.emotion-trust { background: linear-gradient(135deg, #4caf50, #388e3c); color: #fff; }
+.emotion-surprise { background: linear-gradient(135deg, #ff9800, #f57c00); color: #fff; }
+.emotion-neutral { background: linear-gradient(135deg, #9e9e9e, #616161); color: #fff; }
+
+/* Keyword Analysis */
+.keyword-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.keyword-cloud {
+    background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.keyword-item {
+    display: inline-block;
+    margin: 5px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.keyword-positive {
+    background: linear-gradient(135deg, #00ff41, #00cc33);
+    color: #000;
+}
+
+.keyword-negative {
+    background: linear-gradient(135deg, #ff1744, #cc1133);
+    color: #fff;
+}
+
+.keyword-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+/* Heatmap */
+.heatmap-container {
+    height: 400px;
+    margin: 20px 0;
+    background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.heatmap-cell {
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Comparison Analysis */
+.comparison-container {
+    margin: 20px 0;
+}
+
+.brand-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.brand-chip {
+    background: linear-gradient(145deg, #333, #555);
+    color: #ffffff;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.brand-chip.selected {
+    background: linear-gradient(135deg, #0066ff, #004db3);
+    border-color: #0066ff;
+}
+
+.brand-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.comparison-chart {
+    height: 350px;
+    margin: 20px 0;
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #333;
+    border-radius: 50%;
+    border-top-color: #0066ff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .feature-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .keyword-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .emotion-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .brand-selector {
+        justify-content: center;
+    }
+}
